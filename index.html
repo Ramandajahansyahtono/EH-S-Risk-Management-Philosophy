@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <style>
+    :root {
+      --ink: #123d2c;
+      --muted: #426355;
+      --green-950: #064e35;
+      --green-900: #086844;
+      --green-800: #0b7a4c;
+      --green-700: #119755;
+      --green-600: #26ae62;
+      --green-500: #49c273;
+      --green-300: #9fe0b7;
+      --green-200: #c8edd5;
+      --green-100: #e9f8ee;
+      --line: #4acb79;
+      --paper: rgba(255, 255, 255, .93);
+      --shadow: 0 18px 44px rgba(12, 91, 55, .11), 0 3px 9px rgba(12, 91, 55, .06);
+      --soft-shadow: 0 11px 28px rgba(13, 103, 62, .09), 0 2px 6px rgba(13, 103, 62, .05);
+      --px: 0px;
+      --py: 0px;
+      --stage-x: 0px;
+      --stage-y: 0px;
+      --mx: 50%;
+      --my: 24%;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at var(--mx) var(--my), rgba(104, 255, 169, .13), transparent 20%),
+        radial-gradient(circle at calc(14% + var(--px)) calc(22% + var(--py)), rgba(54, 196, 116, .12), transparent 27%),
+        radial-gradient(circle at calc(86% - var(--px)) calc(66% - var(--py)), rgba(31, 175, 103, .11), transparent 31%),
+        linear-gradient(132deg, #011b15 0%, #032e23 48%, #012019 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    button { font: inherit; }
+
+    .scene {
+      position: relative;
+      min-height: 100vh;
+      isolation: isolate;
+      overflow: hidden;
+    }
+
+    #constellation {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -4;
+      pointer-events: none;
+      opacity: .94;
+      transform: translate3d(calc(var(--px) * .18), calc(var(--py) * .18), 0);
+    }
+
+    .aura {
+      position: fixed;
+      width: 42rem;
+      height: 42rem;
+      left: calc(50% - 21rem);
+      top: -23rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(83, 235, 140, .18), rgba(43, 183, 103, .045) 48%, transparent 70%);
+      filter: blur(4px);
+      z-index: -3;
+      pointer-events: none;
+      transform: translate3d(calc(var(--px) * .7), calc(var(--py) * .7), 0);
+    }
+
+    .dot-orb {
+      position: absolute;
+      width: 19rem;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      opacity: .28;
+      z-index: -2;
+      pointer-events: none;
+      mask-image: radial-gradient(circle, #000 0 42%, transparent 72%);
+      background-image: radial-gradient(circle, rgba(30, 153, 87, .42) 1.5px, transparent 1.7px);
+      background-size: 18px 18px;
+    }
+
+    .dot-orb.one {
+      right: -7rem;
+      top: -6rem;
+      transform: translate3d(calc(var(--px) * -1.05), calc(var(--py) * -.8), 0);
+    }
+
+    .dot-orb.two {
+      left: -8rem;
+      bottom: -7rem;
+      transform: translate3d(calc(var(--px) * .85), calc(var(--py) * .65), 0);
+    }
+
+    .infographic {
+      width: min(1440px, calc(100% - 42px));
+      margin: 0 auto;
+      padding: clamp(34px, 5vw, 76px) 0 clamp(38px, 5vw, 68px);
+      position: relative;
+      transform: translate3d(var(--stage-x), var(--stage-y), 0);
+      transition: transform .16s linear;
+    }
+
+    .assessment {
+      position: relative;
+      min-height: 388px;
+    }
+
+    .arc {
+      position: absolute;
+      width: min(1020px, 78%);
+      height: 258px;
+      left: 50%;
+      top: 18px;
+      transform: translateX(-50%);
+      border-radius: 54% 54% 0 0 / 70% 70% 0 0;
+      border-top: 19px solid #43c56f;
+      background: transparent;
+      filter: drop-shadow(0 9px 10px rgba(16, 134, 75, .12));
+      z-index: 0;
+    }
+
+    .assessment-node,
+    .control-card,
+    .verification-card,
+    .outcome {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .assessment-node,
+    .control-card {
+      appearance: none;
+      color: inherit;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .assessment-node {
+      position: absolute;
+      top: 104px;
+      width: 218px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 2px solid var(--green-600);
+      background: rgba(255,255,255,.96);
+      box-shadow: var(--shadow), inset 0 0 0 7px rgba(255,255,255,.76);
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 13px;
+      padding: 23px;
+      z-index: 2;
+      transition: transform .32s cubic-bezier(.2,.8,.2,1), box-shadow .32s ease, border-color .32s ease;
+    }
+
+    .assessment-node.left { left: 4.6%; }
+    .assessment-node.center {
+      top: 0;
+      left: 50%;
+      width: 230px;
+      transform: translateX(-50%);
+      color: #fff;
+      border-color: #fff;
+      background: radial-gradient(circle at 34% 22%, #63cf78, #149655 47%, #05603e 100%);
+      box-shadow: 0 0 0 3px rgba(40, 178, 94, .52), 0 0 0 13px rgba(103, 208, 133, .11), 0 20px 50px rgba(8, 105, 62, .22);
+    }
+    .assessment-node.right { right: 4.6%; }
+
+    .assessment-node:hover,
+    .assessment-node:focus-visible,
+    .assessment-node.is-active {
+      transform: translateY(-7px) scale(1.025);
+      border-color: var(--green-800);
+      box-shadow: 0 24px 54px rgba(7, 98, 58, .18), 0 0 0 8px rgba(62, 190, 105, .09);
+    }
+
+    .assessment-node.center:hover,
+    .assessment-node.center:focus-visible,
+    .assessment-node.center.is-active {
+      transform: translateX(-50%) translateY(-7px) scale(1.025);
+      box-shadow: 0 0 0 3px rgba(40, 178, 94, .58), 0 0 0 15px rgba(103, 208, 133, .13), 0 25px 58px rgba(8, 105, 62, .27);
+    }
+
+    .node-label {
+      max-width: 172px;
+      font-weight: 760;
+      line-height: 1.18;
+      font-size: clamp(17px, 1.45vw, 22px);
+      text-align: center;
+      letter-spacing: -.025em;
+    }
+
+    .assessment-node.center .node-label {
+      font-size: clamp(20px, 1.72vw, 26px);
+      max-width: 176px;
+    }
+
+    .icon-disc {
+      width: 78px;
+      height: 78px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #f4fcf6, #dff4e5);
+      box-shadow: inset 0 0 0 1px rgba(18, 139, 76, .06);
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .assessment-node.center .icon-disc {
+      width: 68px;
+      height: 68px;
+      background: rgba(255,255,255,.14);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
+    }
+
+    .icon { position: relative; display: block; color: var(--green-800); }
+    .assessment-node.center .icon { color: #fff; }
+
+    .calendar { width: 42px; height: 37px; border: 3px solid currentColor; border-radius: 5px; }
+    .calendar::before { content: ""; position: absolute; left: -3px; right: -3px; top: 8px; border-top: 3px solid currentColor; }
+    .calendar::after { content: ""; position: absolute; width: 5px; height: 5px; border-radius: 50%; background: currentColor; left: 7px; top: 17px; box-shadow: 11px 0 currentColor, 22px 0 currentColor, 0 10px currentColor, 11px 10px currentColor; }
+    .calendar i { position: absolute; width: 3px; height: 9px; border-radius: 2px; background: currentColor; left: 8px; top: -7px; box-shadow: 21px 0 currentColor; }
+
+    .shield { width: 42px; height: 48px; background: currentColor; clip-path: polygon(50% 0, 92% 14%, 88% 59%, 72% 83%, 50% 100%, 28% 83%, 12% 59%, 8% 14%); }
+    .shield::before { content: ""; position: absolute; width: 17px; height: 9px; left: 12px; top: 15px; border-left: 4px solid var(--green-700); border-bottom: 4px solid var(--green-700); transform: rotate(-45deg); }
+
+    .lens { width: 38px; height: 38px; border: 4px solid currentColor; border-radius: 50%; }
+    .lens::before { content: ""; position: absolute; width: 21px; height: 4px; background: currentColor; right: -15px; bottom: -7px; border-radius: 4px; transform: rotate(48deg); transform-origin: left center; }
+    .lens::after { content: ""; position: absolute; width: 13px; height: 13px; top: 7px; left: 7px; border-top: 3px solid currentColor; border-left: 3px solid currentColor; border-radius: 50%; opacity: .7; }
+
+    .assessment-copy {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      top: 256px;
+      transform: translateX(-50%);
+      width: min(590px, 47%);
+      color: #eafff1;
+      text-align: center;
+      font-size: clamp(17px, 1.55vw, 23px);
+      line-height: 1.38;
+      font-weight: 620;
+      text-shadow: 0 2px 18px rgba(0, 0, 0, .28);
+      letter-spacing: -.018em;
+    }
+
+    .bridge {
+      position: relative;
+      height: 180px;
+      margin-top: -4px;
+    }
+
+    .side-route {
+      position: absolute;
+      top: 0;
+      width: calc(50% - 282px);
+      height: 76px;
+      border-bottom: 5px solid var(--line);
+    }
+    .side-route.left { left: calc(4.6% + 105px); border-left: 5px solid var(--line); border-radius: 0 0 0 22px; }
+    .side-route.right { right: calc(4.6% + 105px); border-right: 5px solid var(--line); border-radius: 0 0 22px 0; }
+    .side-route::after { content: ""; position: absolute; bottom: -11px; width: 0; height: 0; border-top: 9px solid transparent; border-bottom: 9px solid transparent; }
+    .side-route.left::after { right: -2px; border-left: 14px solid var(--line); }
+    .side-route.right::after { left: -2px; border-right: 14px solid var(--line); }
+
+    .verification-card {
+      position: absolute;
+      left: 50%;
+      top: 26px;
+      transform: translateX(-50%);
+      width: min(570px, 54vw);
+      min-height: 108px;
+      padding: 18px 28px 18px 22px;
+      border: 1px solid #bde7ca;
+      border-radius: 22px;
+      background: var(--paper);
+      box-shadow: var(--soft-shadow);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      z-index: 3;
+      transition: transform .3s ease, box-shadow .3s ease;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      outline: none;
+      font: inherit;
+    }
+    .verification-card:hover,
+    .verification-card:focus-visible,
+    .verification-card.is-active { transform: translateX(-50%) translateY(-4px); box-shadow: 0 18px 38px rgba(10, 102, 60, .22), 0 0 0 5px rgba(102, 236, 149, .12); }
+
+    .target { width: 45px; height: 45px; border: 3px solid currentColor; border-radius: 50%; }
+    .target::before { content: ""; position: absolute; inset: 8px; border: 3px solid currentColor; border-radius: 50%; }
+    .target::after { content: ""; position: absolute; inset: 17px; background: currentColor; border-radius: 50%; }
+    .target i { position: absolute; width: 28px; height: 4px; right: -9px; top: 8px; background: currentColor; border-radius: 4px; transform: rotate(-40deg); z-index: 2; }
+    .target i::after { content: ""; position: absolute; right: -2px; top: -5px; border-left: 8px solid currentColor; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+
+    .verification-copy { min-width: 0; }
+    .verification-copy strong, .verification-copy span { display: block; }
+    .verification-copy strong { font-size: clamp(17px, 1.45vw, 22px); line-height: 1.22; color: var(--green-950); }
+    .verification-copy span { margin-top: 5px; font-size: clamp(15px, 1.25vw, 19px); line-height: 1.25; color: #2d493d; }
+
+    .trunk {
+      position: absolute;
+      left: 50%;
+      top: 134px;
+      width: 5px;
+      height: 46px;
+      transform: translateX(-50%);
+      background: var(--line);
+      border-radius: 3px;
+    }
+
+    .controls {
+      position: relative;
+      padding-top: 54px;
+    }
+
+    .control-rail {
+      position: absolute;
+      height: 5px;
+      top: 0;
+      left: 9.7%;
+      right: 9.7%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #087f4d, #26a85d 50%, #087f4d);
+    }
+
+    .control-rail::before,
+    .control-rail::after { content: ""; position: absolute; top: 0; height: 34px; width: 5px; background: var(--line); }
+    .control-rail::before { left: 0; }
+    .control-rail::after { right: 0; }
+
+    .drops {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      pointer-events: none;
+    }
+    .drop { position: absolute; top: 0; width: 5px; height: 42px; background: var(--line); border-radius: 0 0 3px 3px; }
+    .drop::after { content: ""; position: absolute; left: -7px; bottom: -8px; width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 13px solid var(--line); }
+    .drop:nth-child(1) { left: 9.7%; }
+    .drop:nth-child(2) { left: 29.85%; }
+    .drop:nth-child(3) { left: 50%; }
+    .drop:nth-child(4) { left: 70.15%; }
+    .drop:nth-child(5) { left: 90.3%; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: clamp(14px, 2vw, 30px);
+    }
+
+    .control-card {
+      min-width: 0;
+      min-height: 272px;
+      padding: 24px 13px 20px;
+      border: 1px solid #d7ecde;
+      border-radius: 24px;
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--soft-shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      position: relative;
+      transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease, border-color .3s ease;
+    }
+
+    .control-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 30%;
+      right: 30%;
+      height: 3px;
+      border-radius: 0 0 4px 4px;
+      background: linear-gradient(90deg, transparent, var(--green-500), transparent);
+      opacity: .8;
+    }
+
+    .control-card:hover,
+    .control-card:focus-visible,
+    .control-card.is-active {
+      transform: translateY(-8px);
+      border-color: #9edcb2;
+      box-shadow: 0 22px 42px rgba(9, 99, 58, .15), 0 0 0 5px rgba(61, 185, 102, .07);
+    }
+
+    .control-card .icon-disc { width: 104px; height: 104px; }
+    .card-label {
+      font-size: clamp(15px, 1.32vw, 20px);
+      line-height: 1.24;
+      text-align: center;
+      font-weight: 760;
+      letter-spacing: -.025em;
+      max-width: 210px;
+    }
+
+    .permit { width: 49px; height: 61px; border: 3px solid currentColor; border-radius: 4px; background: #fff; box-shadow: 6px 7px 0 rgba(16, 133, 74, .12); }
+    .permit::before { content: ""; position: absolute; width: 21px; height: 21px; border: 3px solid currentColor; border-radius: 50%; right: -11px; bottom: -9px; background: #eaf8ee; }
+    .permit::after { content: ""; position: absolute; width: 9px; height: 5px; border-left: 3px solid currentColor; border-bottom: 3px solid currentColor; right: -4px; bottom: 0; transform: rotate(-45deg); }
+    .permit i { position: absolute; left: 8px; right: 8px; top: 12px; height: 3px; background: currentColor; box-shadow: 0 10px currentColor, 0 20px currentColor; opacity: .65; }
+
+    .method { width: 54px; height: 58px; border-radius: 5px; background: linear-gradient(145deg, #4bc577, #087948); transform: rotate(-3deg); box-shadow: 7px 8px 0 rgba(7, 104, 61, .13); }
+    .method::before { content: ""; position: absolute; width: 19px; height: 4px; left: 18px; top: 13px; background: #fff; border-radius: 3px; box-shadow: 0 10px #fff, 0 20px #fff; opacity: .92; }
+    .method::after { content: ""; position: absolute; left: 8px; top: 12px; width: 5px; height: 5px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 10px 0 -2px #0a8a4e, 0 10px 0 0 #fff, 0 20px 0 -2px #0a8a4e, 0 20px 0 0 #fff; }
+
+    .hardhat { width: 64px; height: 34px; border-radius: 38px 38px 8px 8px; background: linear-gradient(145deg, #66cd7c, #149452); margin-top: 12px; box-shadow: inset -7px -8px 12px rgba(0,83,44,.16); }
+    .hardhat::before { content: ""; position: absolute; width: 8px; height: 34px; top: -7px; left: 28px; border-radius: 8px 8px 0 0; background: #0a7547; opacity: .78; }
+    .hardhat::after { content: ""; position: absolute; width: 74px; height: 8px; left: -5px; bottom: -4px; border-radius: 6px; background: #087647; box-shadow: 0 5px 7px rgba(6,85,47,.18); }
+
+    .toolbox { width: 65px; height: 41px; border-radius: 5px 5px 9px 9px; background: linear-gradient(#28a85e 0 36%, #087647 36% 43%, #20a259 43%); box-shadow: inset -7px -7px 10px rgba(0,77,42,.16); margin-top: 10px; }
+    .toolbox::before { content: ""; position: absolute; width: 30px; height: 18px; left: 17px; top: -15px; border: 5px solid currentColor; border-bottom: 0; border-radius: 8px 8px 0 0; }
+    .toolbox::after { content: ""; position: absolute; width: 9px; height: 8px; left: 28px; top: 13px; background: #d9f4e1; border-radius: 2px; }
+    .toolbox i { position: absolute; width: 7px; height: 33px; left: 12px; top: -18px; background: #43856a; border: 2px solid #075a3a; border-radius: 5px; transform: rotate(-17deg); box-shadow: 31px 4px 0 -1px #86b89f; }
+
+    .start { width: 64px; height: 64px; border: 4px solid currentColor; border-radius: 50%; box-shadow: inset 0 0 0 6px #dff4e6, 0 5px 13px rgba(5,94,52,.16); background: linear-gradient(145deg, #57c873, #087a49); }
+    .start::after { content: ""; position: absolute; left: 25px; top: 19px; border-left: 22px solid #fff; border-top: 13px solid transparent; border-bottom: 13px solid transparent; filter: drop-shadow(0 2px 2px rgba(0,0,0,.08)); }
+
+    .outcome-zone {
+      position: relative;
+      padding-top: 82px;
+    }
+
+    .outcome-routes { position: absolute; inset: 0 0 auto; height: 84px; pointer-events: none; }
+    .outcome-route { position: absolute; top: 0; width: 5px; height: 55px; background: var(--line); }
+    .outcome-route::after { content: ""; position: absolute; left: -7px; bottom: -8px; border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 13px solid var(--line); }
+    .outcome-route:nth-child(1) { left: 9.7%; }
+    .outcome-route:nth-child(2) { left: 29.85%; }
+    .outcome-route:nth-child(3) { left: 50%; }
+    .outcome-route:nth-child(4) { left: 70.15%; }
+    .outcome-route:nth-child(5) { left: 90.3%; }
+
+    .outcome {
+      width: 100%;
+      min-height: 104px;
+      margin: 0 auto;
+      border: 1px solid #a9dfb8;
+      border-radius: 999px;
+      background: linear-gradient(100deg, rgba(241,251,244,.96), rgba(255,255,255,.97) 52%, rgba(239,250,243,.96));
+      box-shadow: var(--shadow), inset 0 1px 0 #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 26px;
+      padding: 14px 34px 14px 18px;
+      position: relative;
+      z-index: 1;
+      color: inherit;
+      cursor: pointer;
+      outline: none;
+      font: inherit;
+      transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+    }
+
+    .outcome:hover,
+    .outcome:focus-visible,
+    .outcome.is-active {
+      transform: translateY(-5px);
+      border-color: #6dce8c;
+      box-shadow: 0 23px 52px rgba(3, 38, 27, .28), 0 0 0 5px rgba(99, 229, 144, .10);
+    }
+
+    .outcome .icon-disc {
+      width: 76px;
+      height: 76px;
+      background: radial-gradient(circle at 30% 22%, #7bd58c, #20a65e 53%, #087447 100%);
+      box-shadow: 0 9px 20px rgba(7,102,58,.22), inset 0 0 0 1px rgba(255,255,255,.35);
+    }
+
+    .leaf-shield { width: 42px; height: 48px; border: 3px solid #fff; border-radius: 48% 48% 54% 54% / 27% 27% 72% 72%; transform: scale(.86); }
+    .leaf-shield::before { content: ""; position: absolute; width: 18px; height: 27px; left: 10px; top: 9px; background: #fff; border-radius: 100% 0 100% 0; transform: rotate(18deg); }
+    .leaf-shield::after { content: ""; position: absolute; width: 2px; height: 22px; background: var(--green-600); left: 20px; top: 15px; transform: rotate(34deg); border-radius: 2px; }
+
+    .outcome-label {
+      color: var(--green-950);
+      font-size: clamp(19px, 2vw, 29px);
+      line-height: 1.2;
+      font-weight: 780;
+      text-align: center;
+      letter-spacing: -.03em;
+    }
+
+    .definition-panel {
+      width: 100%;
+      max-height: 0;
+      margin: 0 auto;
+      padding: 0 28px;
+      overflow: hidden;
+      border: 1px solid transparent;
+      border-radius: 22px;
+      background: rgba(2, 35, 27, .88);
+      box-shadow: 0 22px 54px rgba(0, 12, 9, .28), inset 0 1px 0 rgba(255,255,255,.04);
+      color: #eafff2;
+      text-align: center;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: max-height .38s ease, margin .38s ease, padding .38s ease, opacity .28s ease, transform .38s ease, border-color .38s ease;
+    }
+
+    .definition-panel.is-visible {
+      max-height: 300px;
+      margin-top: 26px;
+      padding: 22px 28px 24px;
+      border-color: rgba(143, 242, 180, .24);
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .definition-panel h2 {
+      margin: 0 0 8px;
+      color: #bfffd5;
+      font-size: clamp(17px, 1.55vw, 22px);
+      line-height: 1.2;
+      letter-spacing: -.02em;
+    }
+
+    .definition-panel p {
+      max-width: 1080px;
+      margin: 0 auto;
+      color: rgba(235, 255, 243, .84);
+      font-size: clamp(14px, 1.15vw, 17px);
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1050px) {
+      .infographic { width: min(920px, calc(100% - 34px)); }
+      .assessment { min-height: 350px; }
+      .arc { width: 78%; height: 220px; top: 22px; border-top-width: 15px; }
+      .assessment-node { width: 180px; top: 88px; }
+      .assessment-node.center { width: 196px; }
+      .assessment-node.left { left: 1%; }
+      .assessment-node.right { right: 1%; }
+      .assessment-copy { top: 226px; width: 48%; }
+      .side-route { width: calc(50% - 235px); }
+      .side-route.left { left: calc(1% + 88px); }
+      .side-route.right { right: calc(1% + 88px); }
+      .verification-card { width: min(490px, 56vw); }
+      .cards { gap: 12px; }
+      .control-card { min-height: 238px; border-radius: 20px; }
+      .control-card .icon-disc { width: 88px; height: 88px; }
+    }
+
+    @media (max-width: 760px) {
+      .infographic { width: min(520px, calc(100% - 28px)); padding-top: 30px; }
+      .assessment { min-height: 800px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+      .arc { width: 135%; height: 190px; top: 26px; border-top-width: 12px; opacity: .9; }
+      .assessment-node, .assessment-node.center {
+        position: relative;
+        inset: auto;
+        width: min(208px, 66vw);
+        transform: none;
+        flex: 0 0 auto;
+      }
+      .assessment-node.center { order: -1; }
+      .assessment-node:hover, .assessment-node:focus-visible, .assessment-node.is-active,
+      .assessment-node.center:hover, .assessment-node.center:focus-visible, .assessment-node.center.is-active { transform: translateY(-5px) scale(1.02); }
+      .assessment-copy { position: relative; inset: auto; transform: none; width: min(440px, 92%); order: 0; font-size: 17px; }
+      .assessment-node.left { order: 1; }
+      .assessment-node.right { order: 2; }
+      .bridge { height: auto; margin-top: 18px; padding-bottom: 62px; }
+      .side-route { display: none; }
+      .verification-card { position: relative; inset: auto; transform: none; width: 100%; min-height: 108px; }
+      .verification-card:hover,
+      .verification-card:focus-visible,
+      .verification-card.is-active { transform: translateY(-4px); }
+      .trunk { top: auto; bottom: 0; height: 52px; }
+      .controls { padding-top: 0; }
+      .control-rail, .drops, .outcome-routes { display: none; }
+      .cards { display: flex; flex-direction: column; gap: 18px; position: relative; }
+      .cards::before { content: ""; position: absolute; width: 4px; top: -1px; bottom: 1px; left: 50%; background: linear-gradient(var(--line), #72c88e); transform: translateX(-50%); opacity: .62; z-index: -1; }
+      .control-card { width: min(380px, 90%); min-height: 194px; margin: 0 auto; flex-direction: row; padding: 20px 24px; justify-content: flex-start; gap: 22px; }
+      .control-card:nth-child(even) { flex-direction: row-reverse; text-align: right; }
+      .control-card .icon-disc { width: 86px; height: 86px; }
+      .card-label { flex: 1; font-size: 18px; }
+      .outcome-zone { padding-top: 34px; }
+      .outcome { width: 100%; border-radius: 28px; min-height: 120px; padding: 18px; gap: 16px; }
+      .outcome-label { font-size: 20px; }
+      .definition-panel.is-visible { max-height: 420px; padding: 20px; }
+    }
+
+    @media (max-width: 410px) {
+      .assessment { min-height: 780px; }
+      .assessment-node, .assessment-node.center { width: 184px; }
+      .icon-disc { width: 66px; height: 66px; }
+      .control-card { width: 100%; padding: 18px 17px; gap: 15px; }
+      .control-card .icon-disc { width: 76px; height: 76px; transform: scale(.92); }
+      .card-label { font-size: 16px; }
+      .verification-card { padding: 17px 16px; gap: 14px; }
+      .verification-card .icon-disc { width: 64px; height: 64px; transform: scale(.9); }
+      .outcome { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+      #constellation, .aura, .dot-orb { transform: none !important; }
+      .infographic { transform: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <canvas id="constellation" aria-hidden="true"></canvas>
+    <div class="aura" aria-hidden="true"></div>
+    <div class="dot-orb one" aria-hidden="true"></div>
+    <div class="dot-orb two" aria-hidden="true"></div>
+
+    <main class="infographic">
+      <section class="assessment">
+        <div class="arc" aria-hidden="true"></div>
+
+        <button class="assessment-node left process-node definition-node" type="button" data-definition="hazid">
+          <span class="icon-disc" aria-hidden="true"><span class="icon calendar"><i></i></span></span>
+          <span class="node-label">HAZID</span>
+        </button>
+
+        <button class="assessment-node center process-node definition-node" type="button" data-definition="risk-assessment">
+          <span class="icon-disc" aria-hidden="true"><span class="icon shield"></span></span>
+          <span class="node-label">Risk to EH&amp;S Assessment</span>
+        </button>
+
+        <button class="assessment-node right process-node definition-node" type="button" data-definition="two-week">
+          <span class="icon-disc" aria-hidden="true"><span class="icon lens"></span></span>
+          <span class="node-label">2-week HAZID verification</span>
+        </button>
+
+        <div class="assessment-copy">Holistic EH&amp;S Risk Assessment to capture design construction, commissioning &amp; operability risks</div>
+      </section>
+
+      <section class="bridge">
+        <div class="side-route left" aria-hidden="true"></div>
+        <div class="side-route right" aria-hidden="true"></div>
+        <button class="verification-card definition-node" type="button" data-definition="systematic">
+          <span class="icon-disc" aria-hidden="true"><span class="icon target"><i></i></span></span>
+          <span class="verification-copy">
+            <strong>Systematic look ahead &amp; verification</strong>
+            <span>to define risks and mitigation</span>
+          </span>
+        </button>
+        <div class="trunk" aria-hidden="true"></div>
+      </section>
+
+      <section class="controls">
+        <div class="control-rail" aria-hidden="true"></div>
+        <div class="drops" aria-hidden="true">
+          <i class="drop"></i><i class="drop"></i><i class="drop"></i><i class="drop"></i><i class="drop"></i>
+        </div>
+        <div class="cards">
+          <button class="control-card process-node definition-node" type="button" data-definition="work-permit">
+            <span class="icon-disc" aria-hidden="true"><span class="icon permit"><i></i></span></span>
+            <span class="card-label">Work Permit</span>
+          </button>
+          <button class="control-card process-node definition-node" type="button" data-definition="method-statement">
+            <span class="icon-disc" aria-hidden="true"><span class="icon method"></span></span>
+            <span class="card-label">Risk Assessment Method Statement</span>
+          </button>
+          <button class="control-card process-node definition-node" type="button" data-definition="jsa">
+            <span class="icon-disc" aria-hidden="true"><span class="icon hardhat"></span></span>
+            <span class="card-label">Job Safety Analysis (JSA)</span>
+          </button>
+          <button class="control-card process-node definition-node" type="button" data-definition="toolbox-talk">
+            <span class="icon-disc" aria-hidden="true"><span class="icon toolbox"><i></i></span></span>
+            <span class="card-label">Toolbox Talk (TBT)</span>
+          </button>
+          <button class="control-card process-node definition-node" type="button" data-definition="begin-work">
+            <span class="icon-disc" aria-hidden="true"><span class="icon start"></span></span>
+            <span class="card-label">Begin Work</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="outcome-zone">
+        <div class="outcome-routes" aria-hidden="true">
+          <i class="outcome-route"></i><i class="outcome-route"></i><i class="outcome-route"></i><i class="outcome-route"></i><i class="outcome-route"></i>
+        </div>
+        <button class="outcome definition-node" type="button" data-definition="day-to-day">
+          <span class="icon-disc" aria-hidden="true"><span class="icon leaf-shield"></span></span>
+          <span class="outcome-label">Day – to – day management of EH&amp;S risks / impacts</span>
+        </button>
+      </section>
+
+      <aside class="definition-panel" id="definition-panel" aria-live="polite" aria-hidden="true">
+        <h2 id="definition-title"></h2>
+        <p id="definition-copy"></p>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const canvas = document.getElementById('constellation');
+      const context = canvas.getContext('2d');
+      const nodes = [...document.querySelectorAll('.definition-node')];
+      const definitionPanel = document.getElementById('definition-panel');
+      const definitionTitle = document.getElementById('definition-title');
+      const definitionCopy = document.getElementById('definition-copy');
+      const definitions = {
+        'hazid': 'For PDO EH&S planning, HAZID identifies upcoming construction work over the next 90, 60 and 30 days, together with its credible hazards and potential consequences. The activities are prioritized on a Boston Square risk matrix, and high-risk work is connected to the Audit, EH&S Campaign and EH&S Drill Plan so assurance and preparedness follow the actual work forecast.',
+        'risk-assessment': 'The Risk to EH&S Assessment begins during bidding and other early project stages to identify how the proposed scope, hazards, execution strategy and interfaces could affect environmental, health and safety performance. It translates those risks into requirements, minimum controls, responsibilities, deliverables, and necessary cost or schedule allowances before work is awarded and mobilized.',
+        'two-week': 'The 2-week HAZID verification checks the near-term work plan against the earlier assessment. The team confirms that activities, interfaces, hazards and controls are still accurate, captures changes, and closes any gaps before the work enters execution.',
+        'systematic': 'Systematic look-ahead and verification connects project-level risk planning with frontline controls. It checks that known risks are converted into practical mitigation, assigned responsibilities and work-ready requirements before the activity starts.',
+        'work-permit': 'A Work Permit is a formal authorization confirming that defined high-risk work may proceed under specified conditions. The issuer and performing team verify the job scope, location, isolations, hazards, controls, gas testing, simultaneous operations and validity period before approval, handover and close-out.',
+        'method-statement': 'A Risk Assessment Method Statement defines how an activity will be executed safely and consistently, including its sequence, people, equipment, materials, interfaces, hold points and required controls. It is prepared before work, coordinated with the risk assessment and permits, then communicated to supervisors and the work crew.',
+        'jsa': 'JSA divides a job into logical steps, identifies what could harm people or disrupt the work at each step, and agrees the controls, tools, competencies and sequence needed before execution. The team reviews it with the work crew and updates it when conditions or methods change.',
+        'toolbox-talk': 'A Toolbox Talk is a short, focused discussion held with the work crew before or during a shift. The supervisor reviews the planned activity, key hazards, controls, recent lessons and changing site conditions, confirms understanding, and gives workers an opportunity to raise concerns before starting.',
+        'begin-work': 'Work begins only after the required permit, method statement, risk assessment, JSA and toolbox discussion are complete and understood. The team confirms that people, equipment, conditions and controls are ready at the point of work.',
+        'day-to-day': 'Day-to-day EH&S risk management keeps controls effective as the work progresses. Supervisors and crews monitor conditions, manage changes and interfaces, stop when assumptions are no longer valid, and update the controls before continuing.'
+      };
+      let stars = [];
+      let width = 0;
+      let height = 0;
+      let pixelRatio = 1;
+      let targetX = 0;
+      let targetY = 0;
+      let currentX = 0;
+      let currentY = 0;
+      let frame = 0;
+
+      const random = (index, salt) => {
+        const value = Math.sin(index * 91.17 + salt * 47.13) * 43758.5453;
+        return value - Math.floor(value);
+      };
+
+      const makeStars = () => {
+        const count = Math.max(58, Math.min(150, Math.floor((width * height) / 14000)));
+        stars = Array.from({ length: count }, (_, index) => ({
+          x: random(index, 1) * width,
+          y: random(index, 2) * height,
+          radius: .7 + random(index, 3) * 1.25,
+          depth: .25 + random(index, 4) * .95,
+          alpha: .34 + random(index, 5) * .42,
+          flare: index % 19 === 0
+        }));
+      };
+
+      const resize = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(width * pixelRatio);
+        canvas.height = Math.round(height * pixelRatio);
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        makeStars();
+        draw();
+      };
+
+      const draw = () => {
+        context.clearRect(0, 0, width, height);
+        const dx = reduceMotion.matches ? 0 : currentX * 28;
+        const dy = reduceMotion.matches ? 0 : currentY * 21;
+
+        for (let first = 0; first < stars.length; first += 1) {
+          const a = stars[first];
+          const ax = a.x + dx * a.depth;
+          const ay = a.y + dy * a.depth;
+          for (let second = first + 1; second < stars.length; second += 1) {
+            const b = stars[second];
+            const bx = b.x + dx * b.depth;
+            const by = b.y + dy * b.depth;
+            const distance = Math.hypot(ax - bx, ay - by);
+            if (distance < 112) {
+              context.beginPath();
+              context.moveTo(ax, ay);
+              context.lineTo(bx, by);
+              context.strokeStyle = `rgba(87, 231, 143, ${(.15 * (1 - distance / 112)).toFixed(3)})`;
+              context.lineWidth = .7;
+              context.stroke();
+            }
+          }
+
+          context.save();
+          context.translate(ax, ay);
+          context.rotate(Math.PI / 4);
+          context.fillStyle = `rgba(134, 255, 181, ${a.alpha})`;
+          context.shadowColor = 'rgba(89, 255, 158, .9)';
+          context.shadowBlur = a.flare ? 18 : 7;
+          const reach = a.flare ? 7.5 : 2.8;
+          const thickness = a.flare ? 1.25 : a.radius;
+          context.fillRect(-thickness / 2, -a.radius * reach, thickness, a.radius * reach * 2);
+          context.fillRect(-a.radius * reach, -thickness / 2, a.radius * reach * 2, thickness);
+          context.beginPath();
+          context.arc(0, 0, a.flare ? 2.3 : 1.1, 0, Math.PI * 2);
+          context.fill();
+          context.restore();
+        }
+      };
+
+      const animate = () => {
+        currentX += (targetX - currentX) * .055;
+        currentY += (targetY - currentY) * .055;
+        root.style.setProperty('--px', `${(currentX * 15).toFixed(2)}px`);
+        root.style.setProperty('--py', `${(currentY * 12).toFixed(2)}px`);
+        root.style.setProperty('--stage-x', `${(currentX * 3.2).toFixed(2)}px`);
+        root.style.setProperty('--stage-y', `${(currentY * 2.4).toFixed(2)}px`);
+        draw();
+        if (Math.abs(targetX - currentX) > .001 || Math.abs(targetY - currentY) > .001) {
+          frame = requestAnimationFrame(animate);
+        } else {
+          frame = 0;
+        }
+      };
+
+      const move = (event) => {
+        if (reduceMotion.matches) return;
+        targetX = event.clientX / Math.max(width, 1) - .5;
+        targetY = event.clientY / Math.max(height, 1) - .5;
+        root.style.setProperty('--mx', `${event.clientX}px`);
+        root.style.setProperty('--my', `${event.clientY}px`);
+        if (!frame) frame = requestAnimationFrame(animate);
+      };
+
+      const hideDefinition = () => {
+        nodes.forEach((item) => {
+          item.classList.remove('is-active');
+          item.setAttribute('aria-expanded', 'false');
+        });
+        definitionPanel.classList.remove('is-visible');
+        definitionPanel.setAttribute('aria-hidden', 'true');
+      };
+
+      nodes.forEach((node) => {
+        node.setAttribute('aria-expanded', 'false');
+        node.addEventListener('click', () => {
+          const active = node.classList.contains('is-active');
+          hideDefinition();
+          if (!active) {
+            const labelNode = node.querySelector('.node-label, .card-label, .verification-copy strong, .outcome-label');
+            definitionTitle.textContent = labelNode ? labelNode.textContent.trim() : '';
+            definitionCopy.textContent = definitions[node.dataset.definition] || '';
+            node.classList.add('is-active');
+            node.setAttribute('aria-expanded', 'true');
+            definitionPanel.classList.add('is-visible');
+            definitionPanel.setAttribute('aria-hidden', 'false');
+          }
+        });
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') hideDefinition();
+      });
+
+      window.addEventListener('resize', resize, { passive: true });
+      window.addEventListener('pointermove', move, { passive: true });
+      window.addEventListener('pointerleave', () => {
+        targetX = 0;
+        targetY = 0;
+        if (!frame && !reduceMotion.matches) frame = requestAnimationFrame(animate);
+      });
+      reduceMotion.addEventListener('change', () => {
+        targetX = 0;
+        targetY = 0;
+        currentX = 0;
+        currentY = 0;
+        root.style.setProperty('--px', '0px');
+        root.style.setProperty('--py', '0px');
+        root.style.setProperty('--stage-x', '0px');
+        root.style.setProperty('--stage-y', '0px');
+        draw();
+      });
+
+      resize();
+    })();
+  </script>
+</body>
+</html>
