@@ -28,6 +28,8 @@
       --mx: 50%;
       --my: 24%;
       --fit-scale: 1;
+      --fit-left: 0px;
+      --fit-top: 0px;
     }
 
     * { box-sizing: border-box; }
@@ -632,14 +634,166 @@
 
     .fit-viewport .infographic {
       position: absolute;
-      top: 50%;
-      left: 50%;
+      top: 0;
+      left: 0;
       width: 1400px;
       margin: 0;
       padding: 34px 0 38px;
-      transform-origin: center center;
-      transform: translate(-50%, -50%) scale(var(--fit-scale));
+      transform-origin: top left;
+      transform: translate(var(--fit-left), var(--fit-top)) scale(var(--fit-scale));
       transition: transform .16s linear;
+    }
+
+    /* The host editor can make a nominal 790px embed slightly narrower than
+       the mobile breakpoint. Restore the desktop composition before scaling. */
+    .fit-viewport .assessment {
+      display: block;
+      min-height: 388px;
+    }
+
+    .fit-viewport .arc {
+      width: min(1020px, 78%);
+      height: 258px;
+      top: 18px;
+      border-top-width: 19px;
+      opacity: 1;
+    }
+
+    .fit-viewport .assessment-node,
+    .fit-viewport .assessment-node.center {
+      position: absolute;
+      inset: auto;
+      top: 104px;
+      width: 218px;
+      transform: none;
+    }
+
+    .fit-viewport .assessment-node.left {
+      left: 4.6%;
+    }
+
+    .fit-viewport .assessment-node.center {
+      top: 0;
+      left: 50%;
+      width: 230px;
+      transform: translateX(-50%);
+    }
+
+    .fit-viewport .assessment-node.right {
+      right: 4.6%;
+    }
+
+    .fit-viewport .assessment-node.center:hover,
+    .fit-viewport .assessment-node.center:focus-visible,
+    .fit-viewport .assessment-node.center.is-active {
+      transform: translateX(-50%) translateY(-7px) scale(1.025);
+    }
+
+    .fit-viewport .assessment-copy {
+      position: absolute;
+      inset: auto;
+      left: 50%;
+      top: 256px;
+      width: min(590px, 47%);
+      transform: translateX(-50%);
+      font-size: 23px;
+    }
+
+    .fit-viewport .bridge {
+      height: 180px;
+      margin-top: -4px;
+      padding-bottom: 0;
+    }
+
+    .fit-viewport .side-route {
+      display: block;
+      width: calc(50% - 282px);
+    }
+
+    .fit-viewport .side-route.left {
+      left: calc(4.6% + 105px);
+    }
+
+    .fit-viewport .side-route.right {
+      right: calc(4.6% + 105px);
+    }
+
+    .fit-viewport .verification-card {
+      position: absolute;
+      inset: auto;
+      left: 50%;
+      top: 26px;
+      width: 570px;
+      transform: translateX(-50%);
+    }
+
+    .fit-viewport .verification-card:hover,
+    .fit-viewport .verification-card:focus-visible,
+    .fit-viewport .verification-card.is-active {
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    .fit-viewport .trunk {
+      top: 134px;
+      bottom: auto;
+      height: 46px;
+    }
+
+    .fit-viewport .controls {
+      padding-top: 54px;
+    }
+
+    .fit-viewport .control-rail,
+    .fit-viewport .drops,
+    .fit-viewport .outcome-routes {
+      display: block;
+    }
+
+    .fit-viewport .cards {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 30px;
+    }
+
+    .fit-viewport .cards::before {
+      content: none;
+    }
+
+    .fit-viewport .control-card,
+    .fit-viewport .control-card:nth-child(even) {
+      width: auto;
+      min-height: 272px;
+      margin: 0;
+      padding: 24px 13px 20px;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+      text-align: center;
+    }
+
+    .fit-viewport .control-card .icon-disc {
+      width: 104px;
+      height: 104px;
+      transform: none;
+    }
+
+    .fit-viewport .card-label {
+      font-size: 20px;
+    }
+
+    .fit-viewport .outcome-zone {
+      padding-top: 82px;
+    }
+
+    .fit-viewport .outcome {
+      width: 100%;
+      min-height: 104px;
+      padding: 14px 34px 14px 18px;
+      flex-direction: row;
+    }
+
+    .fit-viewport .outcome-label {
+      font-size: 29px;
     }
 
     .fit-viewport .definition-panel {
@@ -662,7 +816,7 @@
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
       #constellation, .aura, .dot-orb { transform: none !important; }
       .infographic { transform: none !important; }
-      .fit-viewport .infographic { transform: translate(-50%, -50%) scale(var(--fit-scale)) !important; }
+      .fit-viewport .infographic { transform: translate(var(--fit-left), var(--fit-top)) scale(var(--fit-scale)) !important; }
     }
   </style>
 </head>
@@ -808,6 +962,8 @@
         const useFit = width >= 560 && height <= 650 && width / Math.max(height, 1) >= 1.2;
         root.classList.toggle('fit-viewport', useFit);
         root.style.setProperty('--fit-scale', '1');
+        root.style.setProperty('--fit-left', '0px');
+        root.style.setProperty('--fit-top', '0px');
 
         if (!useFit) return;
 
@@ -819,6 +975,8 @@
           1
         );
         root.style.setProperty('--fit-scale', scale.toFixed(4));
+        root.style.setProperty('--fit-left', `${Math.max(0, (width - naturalWidth * scale) / 2).toFixed(2)}px`);
+        root.style.setProperty('--fit-top', `${Math.max(0, (height - naturalHeight * scale) / 2).toFixed(2)}px`);
       };
 
       const resize = () => {
